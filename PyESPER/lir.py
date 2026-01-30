@@ -50,7 +50,7 @@ def lir(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}, 
         DesiredVariables, 
         PredictorMeasurements,
         OutputCoordinates, 
-        **kwargs
+        #**kwargs
     )
     
     # Processing the input values (Uncertainties_pre) and calculating default 
@@ -74,7 +74,7 @@ def lir(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}, 
         DesiredVariables,
         PredictorMeasurements,
         InputAll,
-        **kwargs
+        #**kwargs
     )
 
     # Performing iterations for equation-desired variable combinations;
@@ -111,6 +111,7 @@ def lir(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}, 
 
     # Interpolate
     aaLCs, aaInterpolants_pre, elLCs, elInterpolants_pre = interpolate(
+        Path,
         Gdf, 
         AAdata, 
         Elsedata
