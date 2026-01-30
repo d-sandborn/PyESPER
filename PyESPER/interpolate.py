@@ -36,6 +36,12 @@ def interpolate(Path, Gdf={}, AAdata={}, Elsedata={}):
         tri = Delaunay(points)
         with open(join(Path, "PyESPER/tri.pkl"), "wb") as f:
             pickle.dump(tri, f) 
+            
+    cols = ["C_alpha", "C_S", "C_T", "C_A", "C_B", "C_C"]    
+    all_v = [np.column_stack([grid[c] for c in cols]) for grid in Gvalues]
+    values = np.stack(all_v, axis=1)
+        
+    interpolant = LinearNDInterpolator(tri, values)
 
     def process_grid(grid_values, data_values):
         """
@@ -43,48 +49,18 @@ def interpolate(Path, Gdf={}, AAdata={}, Elsedata={}):
             and interpolate based upon a Delaunay triangulation, using scipy's
             LinearNDInterpolator
         """
-
-        # results = []
-
-        # for i in range(len(grid_values)):
-        #     grid = grid_values[i]
-        #     values = np.array(
-        #         [
-        #             list(grid["C_alpha"]),
-        #             list(grid["C_S"]),
-        #             list(grid["C_T"]),
-        #             list(grid["C_A"]),
-        #             list(grid["C_B"]),
-        #             list(grid["C_C"]),
-        #         ]
-        #     ).T
-        #     interpolant = LinearNDInterpolator(tri, values)
-
-        #     data = data_values[i]
-        #     points_to_interpolate = (
-        #         list(data["Longitude"]),
-        #         list(data["Latitude"]),
-        #         list(data["d2d"]),
-        #     )
-        #     results.append(interpolant(points_to_interpolate))
-            
-        #nix the for loop'd interp
-        cols = ["C_alpha", "C_S", "C_T", "C_A", "C_B", "C_C"]    
-        all_v = [np.column_stack([grid[c] for c in cols]) for grid in grid_values]
-        values = np.stack(all_v, axis=1)
-            
-        interpolant = LinearNDInterpolator(tri, values)
+        
         data = data_values[0]
         points_to_interpolate = np.column_stack([
             data["Longitude"],
             data["Latitude"],
             data["d2d"],
         ])
-        results = [interpolant(points_to_interpolate)[:, i, :] for i in range(len(grid_values))]               
+        raw_results = interpolant(points_to_interpolate)
+        results = [raw_results[:, i, :] for i in range(len(grid_values))]               
 
         return results, interpolant
     
-
 
     # Process AA (Atlantic/Arctic) and Else grids
     aaLCs, aaInterpolants_pre = process_grid(Gvalues, AAOvalues)

@@ -23,32 +23,32 @@ def emlr_estimate(Equations, DesiredVariables, Path, OutputCoordinates={}, Predi
     import numpy as np
     from scipy.interpolate import griddata
     from PyESPER.fetch_data import fetch_data
+    from scipy.interpolate import LinearNDInterpolator
+    from scipy.spatial import Delaunay
+    from os.path import join
+    import pickle
+    
 
     # Predefine dictionary and lists to fill
     EMLR, varnames, EqM = {}, [], []
+    depth_out = np.array(OutputCoordinates['depth'])
+    sal_out = np.array(PredictorMeasurements['salinity'])
 
     # Iterating over variables to fetch data this time
     for dv in DesiredVariables:
         # Fetch LIR data and process into grid arrays
         LIR_data = fetch_data([dv], Path)
-
-        # Construct the grid array
-        LIR_data = fetch_data([dv], Path)
-
-        # Some formatting of the uncertainties from the import
-        arr = np.array(LIR_data)
-        arr = arr[3]
-        arritem = arr.item()
-
+        arritem = LIR_data[3].item()
+                
         UGridArray = np.array([
             np.nan_to_num([arritem[i][c][b][a] for a in range(16) for b in range(11) for c in range(8)])
             for i in range(len(arritem))
         ]).T
-
-        # Grid columns: UDepth, USal, Eqn, RMSE
         UDepth, USal, Eqn, RMSE = UGridArray.T
-        UGridPoints = (UDepth, USal, Eqn)
-        UGridValues = RMSE
+        
+        #UGridPoints = (UDepth, USal, Eqn)
+        #UGridValues = RMSE
+        interpolator = LinearNDInterpolator(np.column_stack([UDepth, USal, Eqn]), RMSE)
     
         # Iterating over equations within variables to interpolate the uncertainties to
         # desired locations
@@ -57,13 +57,9 @@ def emlr_estimate(Equations, DesiredVariables, Path, OutputCoordinates={}, Predi
             varnames.append(varname)
             EM = []
 
-            eq_repeated = np.full_like(OutputCoordinates['depth'], eq)
-            UGridPointsOut = (
-                np.array(OutputCoordinates['depth']),
-                np.array(PredictorMeasurements['salinity']),  
-                eq_repeated
-            )
-            emlr = griddata(UGridPoints, UGridValues, UGridPointsOut, method='linear')
+            eq_repeated = np.full_like(depth_out, eq)
+            UGridPointsOut = np.column_stack([depth_out, sal_out, eq_repeated])
+            emlr = interpolator(UGridPointsOut)#griddata(UGridPoints, UGridValues, UGridPointsOut, method='linear')
 
             combo = f"{dv}{eq}"
             Coefs = {
