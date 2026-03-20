@@ -1,7 +1,8 @@
 numpy
-seawater
+#seawater
 scipy
 matplotlib
 kiwisolver
 PyCO2SYS
 pandas
+numba

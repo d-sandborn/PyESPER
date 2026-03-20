@@ -1,208 +1,128 @@
 # PyESPER
-version 1.0.2
 
-<ins>Note:</ins>
-This is for use of the [PyESPER](https://github.com/LarissaMDias/PyESPER/blob/main) package. This package is being developed in parallel with [pyTRACE](https://github.com/d-sandborn/pyTRACE/tree/main).
+PyESPER is a Python implementation of MATLAB Empirical Seawater Property Estimation Routines ([ESPERs](https://github.com/BRCScienceProducts/ESPER)), and the present version consists of a preliminary package which implements these routines. These routines provide estimates of seawater biogeochemical properties at user-provided sets of coordinates, depth, and available biogeochemical properties. 
+
+This package is developed in parallel with [TRACE-Python](https://github.com/d-sandborn/TRACE).
+
+---
+
+## Installation
 
-## Quick Start
-Please see the associated [Examples](https://github.com/LarissaMDias/PyESPER/blob/main/examples.py) for a quick example of use of the preliminary PyESPER. To run this code, you will need to first make sure that you have downloaded the required associated files from the GitHub page as follows. You will also need to ensure that the installed package [requirements](https://github.com/LarissaMDias/PyESPER/blob/main/requirements.txt) are met. The example uses the [GLODAPv2.2023](https://glodap.info) dataset and requires the [glodap](https://github.com/BjerknesClimateDataCentre/glodap/tree/master) package be installed.
+To install PyESPER, clone this repository and navigate to the PyESPER folder. It is recommended that you create a virtual environment and install all packages listed in the requirements.txt file. Open a terminal in the PyESPER directory and run
 
-To install PyESPER to your remote repository, clone this repository and navigate to the PyESPER folder. It is recommended that you create a virtual environment and install all packages listed in the requirements.txt file. Then simply run the following in your terminal: 
+`pip install PyESPER`
 
-pip install PyESPER
+to install the package and required dependencies listed in `requirements.txt`. *Note: Examples rely on the GLODAPv2.2023 dataset, which requires the separate `glodap` package.*
 
-Mat_fullgrid folder: 
-Folder of .mat files needed for each variable to be estimated, necessary for PyESPER_LIR or PyESPER_Mixed
-    
-NeuralNetworks folder:
-Folder of .py files needed for each variable to be estimated, necessary for running PyESPER_NN or PyESPER_Mixed. These currently must be unpacked into the main directory. 
-    
-Uncertainty_Polys folder:
-Folder of .mat files needed for ach variable to be estimated, necessary for running PyESPER_NN or PyESPER_Mixed
-    
-SimpleCantEstimateLR.csv:
-File necessary for estimating anthropogenic carbon component for pH or DIC
-    
-## Introduction
-PyESPER is a Python implementation of MATLAB Empirical Seawater Property Estimation Routines ([ESPERs](https://github.com/BRCScienceProducts/ESPER)), and the present version consists of a preliminary package which implements these routines. These routines provide estimates of seawater biogeochemical properties at user-provided sets of coordinates, depth, and available biogeochemical properties. Three algorithm options are available through these routines: 
+---
 
-1. Locally interpolated regressions (LIRs)
-2. Neural networks (NNs)
-3. Mixed
+## Algorithms
 
-The routines predict coefficient and intercept values for a set of up to 16 equations, as follows:
-(S=salinity, T=temperature, oxygen=dissolved oxygen molecule... see "PredictorMeasurements" for units). 
-1.    S, T, A, B, C
-2.    S, T, A, C
-3.    S, T, B, C
-4.    S, T, C
-5.    S, T, A, B
-6.    S, T, A
-7.    S, T, B
-8.    S, T
-9.    S, A, B, C
-10.   S, A, C
-11.   S, B, C
-12.   S, C
-13.   S, A, B
-14.   S, A
-15.   S, B
-16.   S
+PyESPER offers three algorithms to predict desired variables:
 
-<ins>DesiredVariable: A, B, C</ins>
+1.  **PyESPER_LIR:** Interpolated linear networks (LIRv.3 / ESPERv1.1).
+2.  **PyESPER_NN:** Neural network estimations (ESPERv1.1).
+3.  **PyESPER_Mixed:** An averaged ensemble of LIR and NN estimates.
 
--TA: nitrate, oxygen, silicate
+### Estimation Logic
 
--DIC: nitrate, oxygen, silicate
+The routines calculate coefficients and intercepts across up to 16 equation combinations. The base predictors are always Salinity (S) and Temperature (T). The remaining predictors (A, B, C) shift depending on the target variable.
 
--pH: nitrate, oxygen, silicate
+| Desired Variable | Predictor A | Predictor B | Predictor C |
+| :--- | :--- | :--- | :--- |
+| **TA**, **DIC**, **pH**, **phosphate** | Nitrate | Oxygen | Silicate |
+| **nitrate** | Phosphate | Oxygen | Silicate |
+| **silicate** | Phosphate | Oxygen | Nitrate |
+| **oxygen** | Phosphate | Nitrate | Silicate |
 
--phosphate: nitrate, oxygen, silicate
+**Equation Options:**
 
--nitrate: phosphate, oxygen, silicate
+1. S, T, A, B, C
+2. S, T, A, C
+3. S, T, B, C
+4. S, T, C
+5. S, T, A, B
+6. S, T, A
+7. S, T, B
+8. S, T
+9. S, A, B, C
+10. S, A, C
+11. S, B, C
+12. S, C
+13. S, A, B
+14. S, A
+15. S, B
+16. S
 
--silicate: phosphate, oxygen, nitrate
+---
 
--oxygen: phosphate, nitrate, silicate
+## Usage
 
-### Documentation and citations:
-LIARv1: Carter et al., 2016, doi: 10.1002/lom3.10087
+```python
+import PyESPER
 
-LIARv2, LIPHR, LINR citation: Carter et al., 2018, doi: 10.1002/lom3.10232
+outputs = PyESPER.emlr_estimate(
+    DesiredVariables=["TA", "DIC"],
+    Path="/path/to/Mat_fullgrid/",
+    OutputCoordinates={
+        "longitude": [0.0, 180.0], 
+        "latitude": [85.0, -20.0], 
+        "depth": [10, 1000]
+    },
+    PredictorMeasurements={
+        "salinity": [35.0, 34.1],
+        "temperature": [0.1, 10.0],
+        "oxygen": [202.3, 214.7],
+        "silicate": [15.0, 45.2],
+        "nitrate": [1.2, 30.5]
+    },
+    EstDates=[2020.5, 2020.5],
+    Equations=[1, 2, 8, 16],
+    PerKgSwTF=True
+)
+```
 
-LIPR, LISIR, LIOR, first described/used: Carter et al., 2021, doi: 10.1002/lom3/10232
+### Required Parameters
 
-LIRv3 and ESPER_NN (ESPERv1.1): Carter, 2021, doi: 10.5281/ZENODO.5512697
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `DesiredVariables` | `list[str]` | Variables to return. Options: `"TA"`, `"DIC"`, `"pH"`, `"phosphate"`, `"nitrate"`, `"silicate"`, `"oxygen"`. |
+| `Path` | `str` | Absolute or relative path to the downloaded LIR `.mat` files. |
+| `OutputCoordinates` | `dict` | Keys: `"longitude"` (°E), `"latitude"` (°N), `"depth"` (m). Values must be arrays of length `n`. |
+| `PredictorMeasurements` | `dict` | Keys: `"salinity"`, `"temperature"`, `"phosphate"`, `"nitrate"`, `"silicate"`, `"oxygen"`. Values are arrays of length `n`. Unmeasured variables can be omitted or filled with `NaN`. |
 
-PyESPER is a Python implementation is ESPER:
-Carter et al., 2021, doi: 10.1002/lom3/10461
+### Optional Parameters
 
-ESPER_NN is inspired by CANYON-B, which also uses neural networks:
-Bittig et al., 2018, doi: 10.3389/fmars.2018.00328
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `EstDates` | `list[float]` | `2002.0` | Decimal dates for the estimates. Crucial for DIC and pH accuracy. |
+| `Equations` | `list[int]` | `1:16` | Specific equation permutations to run (1-16). |
+| `MeasUncerts` | `dict` | WOCE Defaults | Keys: `"sal_u"`, `"temp_u"`, `"phosphate_u"`, `"nitrate_u"`, `"silicate_u"`, `"oxygen_u"`. |
+| `pHCalcTF` | `bool` | `False` | Recalculates pH as if derived from TA/DIC rather than measured via dye. |
+| `PerKgSwTF` | `bool` | `True` | Set to `False` if your inputs are volumetric (µmol/L) rather than molal (µmol/kg). Outputs are always molal. |
+| `VerboseTF` | `bool` | `True` | Toggles terminal logging. |
 
-### PyESPER_LIR 
-These are the first version of Python implementation of LIRv.3; ESPERv1.1, which use collections of interpolated linear networks. 
+---
 
-### PyESPER_NN
-These are the first version of Python implementation of ESPERv1.1, which uses neural networks. 
+## Outputs
 
-### PyESPER_Mixed
-These are the first version of Python implementation of ESPERv1.1, which is an average of the LIR and NN estimates. 
+PyESPER returns three dictionaries, shape `(n, e)` where `n` is the number of coordinates and `e` is the number of equations computed:
 
-## Basic Use
+1.  **Estimates:** The computed variables (µmol/kg, except for unitless pH).
+2.  **Coefficients:** The equation intercepts and weights used for the estimation (LIR algorithm only).
+3.  **Uncertainties:** The propagated uncertainty bounds for the estimate.
 
-### Requirements
-For the present version, you will need to download the repository along with the affiliated neural network files within the [NeuralNetworks](https://github.com/LarissaMDias/PyESPER/tree/main/NeuralNetworks) folder, and the [SimpleCantEstimateLR_full.csv](https://github.com/LarissaMDias/PyESPER/blob/main/SimpleCantEstimateLR_full.csv) file for estimates involving anthropogenic carbon calculations (pH and dissolved inorganic carbon). 
+*Missing Data Handling: Passing `NaN` as a coordinate or required predictor parameter will cascade and return `NaN` for all dependent equation estimates.*
 
-To run the code, you will need numpy, pandas, seawater (now deprecated but necessary for consistency with ESPERv1), scipy, time, matplotlib, PyCO2SYS, importlib, statistics, and os packages.
+---
 
-Please refer to the examples .py file for proper use.
+## References
 
-### Organization and Units
-The measurements are provided in molar units or if potential temperature or AOU are needed but not provided by the user. Scale differences from TEOS-10 are a negligible component of alkalinity estimate error. PyCO2SYS is required if pH on the total scale is a desired output variable.
+If you use this package, cite the relevant publications:
 
-#### Input/Output dimensions:
-p:    Integer number of desired property estimate types (e.g., TA, pH, NO3-)
-
-n:    Integer number of desired estimate locations
-
-e:    Integer number of equations used at each location
-
-y:    Integer number of parameter measurement types provided by the user
-
-n*e:  Total number of estimates returned as an n by e array
-
-#### Required Inputs:
-
-##### DesiredVariables (required 1 by p list, where p specifies the desired variable(x) in string format): 
-List elements specify which variables will be returned. Excepting unitless pH, all outputs are in micromol per kg seawater. Naming of list elements must be exactly as demonstrated below (excamples ["TA"], ["DIC", "phosphate", "oxygen"]). 
-
-<ins>Desired Variable: List Element Name (String Format):</ins>
-
-Total Titration Seawater Alkalinity: TA
-
-Total Dissolved Inorganic Carbon: DIC
-
-in situ pH on the total scale: pH
-
-Phosphate: phosphate
-
-Nitrate: nitrate
-
-Silicate: silicate
-
-Dissolved Oxygen (O<sub>2</sub>):  oxygen
-
-##### Path (required string):
-Path directing Python to the location of saved/downloaded LIR files on the user's computer, if not in the current working directory (otherwise blank; e.g., '/Users/lara/Documents/Python' or ''). 
-
-##### OutputCoordinates (required n by 3 dictionary, where n are the number of desired estimate locations and the three dicstionary keys are longitude, latitude, and depth):
-Coordinates at which estimates are desired. The keys should be longitude (degrees E), latitude (degrees N), and positive integer depth (m), with dictionary keys named 'longitude', 'latitude', and 'depth' (ex: OutputCoordinates={"longitude": [0, 180, -50, 10], "latitude": [85, -20, 18, 0.5], "depth": [10, 1000, 0, 0]} or OutputCoordinates={"longitude": long, "latitude": lat, "depth": depth} when referring to a set of predefined lists or numpy arrays of latitude, longitude, and depth information. 
-
-##### PredictorMeasurements (required n by y dictionary, where n are the number of desired estimate locations and y are the dictionary keys representing each possible input): 
-Parameter measurements that will be used to estimate desired variables. Concentrations should be expressed as micromol per kg seawater unless PerKgSwTF is set to false in which case they should be expressed as micromol per L, temperature should be expressed as degrees C, and salinity should be specified with the unitless convention. NaN inputs are acceptable, but will lead to NaN estimates for any equations that depend on that parameter. The key order (y columns) is arbitrary, but naming of keys must adhere to the following convention (ex: PredictorMeasurements={"salinity": [35, 34.1, 32, 33], "temperature": [0.1, 10, 0.5, 2], "oxygen": [202.3, 214.7, 220.5, 224.2]} or PredictorMeasurements={'salinity': sal, 'temperature: temp, 'phosphate': phos, 'nitrate': nitrogen} when referring to predefined lists or numpy arrays of measurements:
-
-<ins>Input Parameter: Dictionary Key Name</ins>
-
--Salinity: salinity
-
--Temperature: temperature
-
--Phosphate: phosphate
-
--Nitrate: nitrate
-
--Silicate: silicate
-
--O<sub>2</sub>: oxygen
-
-#### Optional Inputs:
-All remaining inputs must be specified as sequential input argument pairs (e.g., "EstDates"=EstDates when referring to a predefined list of dates, 'Equations'=[1:16], pHCalcTF=True, etc.)
-
-##### EstDates (optional but recommended n by 1 list or 1 by 1 value, default 2002.0):
-A list of decimal dates for the estimates (e.g., July 1 2020 would be 2020.5). If only a single date is supplied that value is used for all estimates. It is highly recommended that date(s) be provided for estimates of DIC and pH. This version of the code will accept 1 by n inputs as well. 
-
-##### Equations (optional 1 by e list, default [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]):
-List indicating which equations will be used to estimate desired variables. If [] is input or the input is not specified then all 16 equations will be used. 
-
-#### Optional Inputs
-
-##### MeasUncerts (Optional n by y dictionary or 1 by y dictionary, default: [0.003 S, 0.003 degrees C T or potential temperature, 2% phosphate, 2% nitrate, 2% silicate, 1% AOU or O<sub>2</sub>]): 
-Dictionary of measurement uncertainties (see 'PredictorMeasurements' for units). Providing these estimates will improve PyESPER estimate uncertainties. Measurement uncertainties are a small p0art of PyESPER estimate uncertainties for WOCE-quality measurements. However, estimate uncertainty scales with measurement uncertainty, so it is recommended that measurement uncertainties be specified for sensor measurements. If this optional input argument is not provided, the default WOCE-quality uncertainty is assumed. If a 1 by y array is provided then the uncertainty estimates are assumed to apply uniformly to all input parameter measurements. Uncertainties should be presented with the following naming convention:
-
-<ins>Input Uncertainties: Key Name</ins>
-
--Salinity: sal_u
-
--Temperature: temp_u
-
--Phosphate: phosphate_u
-
--Nitrate: nitrate_u
-
--Silicate: silicate_u
-
--Oxygen: oxygen_u
-
-##### pHCalcTF (Optional boolean, default false):
-If set to true, PyESPER will recalculate the pH to be a better estimate of what the seawater pH value would be if calculated from TA and DIC instead of measured with purified m-cresol dye. This is arguably also a better estimate of the pH than would be obtained from pre-2011 measurements with impure dyes. See LIPHR paper for details. 
-
-##### PerKgSwTF (Optional boolean, default true):
-Many sensors provide measurements in micromol per L (molarity) instead of micromol per kg seawater. Indicate false if provided measurements are expressed in molar units (concentrations must be micromol per L if so). Outputs will remain in molal units regardless. 
-
-##### VerboseTF (Optional boolean, default true):
-Setting this to false will reduce the number of updates, warnings, and errors printed by PyESPER. An additional step can be taken before executing the PyESPER function (see examples) that will further reduce updates, warnings, and errors, if desired.
-
-#### Outputs:
-
-##### Estimates: 
-An n by e dictionary of estimates specific to the coordinates and parameter measurements provided as inputs. Units are micromoles per kg (equivalent to the deprecated microeq per kg seawater). Column names are the unique desired variable-equation combinations requested by the user. 
-
-##### Coefficients (LIRs only):
-An n by e dictionary of dictionaries of equation intercepts and coefficients specific to the coordinates and parameter measurements provided as inputs. Column names are the unique desired variable-equation combinations requested by the user. 
-
-##### Uncertainties: 
-An n by e dictionary of uncertainty estimates specific to the coordinates, parameter measurements, and parameter uncertaineis provided. Units are micromoles per kg (equivalent to the deprecated microeq per kg seawater). Column names are the unique desired variable-equation combinations requested by the user. 
-
-#### Missing Data:
-Should be indicated with a NaN. A NaN coordinate will yield NaN estimates for all equations at that coordinate. A NaN parameter value will yield NaN esitmates for all equations that require that parameter.  
+* **PyESPER Implementation:** Carter et al., 2021 (doi: 10.1002/lom3/10461)
+* **LIRv3 / ESPER_NN (ESPERv1.1):** Carter, 2021 (doi: 10.5281/ZENODO.5512697)
+* **LIARv1:** Carter et al., 2016 (doi: 10.1002/lom3.10087)
+* **LIARv2, LIPHR, LINR:** Carter et al., 2018 (doi: 10.1002/lom3.10232)
+* **LIPR, LISIR, LIOR:** Carter et al., 2021 (doi: 10.1002/lom3/10232)
+* **Neural Network Inspiration (CANYON-B):** Bittig et al., 2018 (doi: 10.3389/fmars.2018.00328)

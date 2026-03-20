@@ -11,12 +11,12 @@ setup(
     author_email="lmdias@uw.edu",
     packages=["PyESPER"],
     install_requires=[
-        "numpy", 
-        "seawater", 
-        "scipy", 
-        "matplotlib", 
+        "numpy",
+        "seawater",
+        "scipy",
+        "matplotlib",
         "PyCO2SYS",
-        "pandas"
+        "pandas" "numba",
     ],
     entry_points={
         "console_scripts": [
