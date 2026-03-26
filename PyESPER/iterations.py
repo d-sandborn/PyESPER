@@ -36,13 +36,13 @@ def iterations(
     import numpy as np
 
     # import seawater as sw
-    import PyESPER.eos80_jit as sw
+    import PyESPER.eos80_jit as sw  # grab local copies of NJIT'd seawater
 
     print("Organzing user input.")
 
     n = max(len(v) for v in C.values())
 
-    depth = np.asarray(C["depth"])
+    depth = np.asarray(C["depth"])  # using arrays for speed boost
     latitude = np.asarray(C["latitude"])
     salinity = np.asarray(PredictorMeasurements["salinity"])
 

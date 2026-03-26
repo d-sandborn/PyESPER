@@ -107,6 +107,7 @@ def interpolate(Path, Gdf={}, AAdata={}, Elsedata={}, verbose=False):
     number_of_equations = len(Gvalues)
     number_of_coefficients = len(cols)
 
+    # organize coords for interpolation
     points_3d = np.column_stack((grid["lon"], grid["lat"], grid["d2d"]))
     raw_values_all = np.empty(
         (len(points_3d), number_of_equations, number_of_coefficients),
@@ -141,9 +142,12 @@ def interpolate(Path, Gdf={}, AAdata={}, Elsedata={}, verbose=False):
 
         mean_vals = np.nanmean(masked_values, axis=0)
 
-        # this is only for initializing the grid
+        # nearest interp is only for initializing the grid
+        # and preventing first interpolation from contaminating second
         nearest_interp = NearestNDInterpolator(masked_points, masked_values)
         filled_flat = nearest_interp(query_points)
+
+        # make sure grid has correct dim order
         filled_3d = filled_flat.reshape(
             (
                 len(u_lon),
@@ -165,8 +169,7 @@ def interpolate(Path, Gdf={}, AAdata={}, Elsedata={}, verbose=False):
         pad_arr[...] = mean_vals
         pad_arr[1:-1, 1:-1, 1:-1, :, :] = filled_3d
 
-        # regular grid instead of scattered grid seems to perform well
-        # and much faster
+        # regular grid instead of scattered grid performs well and much faster
         return RegularGridInterpolator(
             (u_lon_pad, u_lat_pad, u_depth_pad),
             pad_arr,
@@ -174,6 +177,7 @@ def interpolate(Path, Gdf={}, AAdata={}, Elsedata={}, verbose=False):
             fill_value=np.nan,
         )
 
+    # run each of the interps in turn
     interp_aa = build_interpolant(aa_bool)
     interp_else = build_interpolant(else_bool)
 
