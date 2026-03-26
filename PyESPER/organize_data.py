@@ -18,11 +18,6 @@ def organize_data(
         array_object = np.asarray(arr)
         if array_object.dtype.kind in {"U", "S", "O"}:
             array_object = np.where(
-                (array_object == "nan") | (array_object == "NaN"),
-                "0.0",
-                array_object,
-            )
-            array_object = np.where(
                 array_object == "-2.4319000000000003e-",
                 "-0.000002",
                 array_object,
@@ -35,18 +30,18 @@ def organize_data(
                 try:
                     return float(x)
                 except:
-                    return 0.0
+                    return np.nan
 
             return np.vectorize(conv, otypes=[float])(array_object)
 
     def process_pair(c_in, v_in):
-        c_out = np.nan_to_num(np.asarray(c_in, dtype=np.float64), nan=0.0)
-        v_out = np.nan_to_num(safe_float(v_in), nan=0.0)
+        c_out = np.asarray(c_in, dtype=np.float64)
+        v_out = safe_float(v_in)
         return c_out, v_out
 
     for i, key in enumerate(Gkeys):
         eq_num = int(re.search(r"(\d+)$", key).group(1))
-        mask = eq_num - 1
+        mask = 16 - eq_num
 
         do_B = (mask & 1) != 0
         do_A = (mask & 2) != 0
@@ -91,10 +86,8 @@ def organize_data(
                 c_C = np.zeros(arr_len, dtype=np.float64)
                 v_C = np.zeros(arr_len, dtype=np.float64)
 
-            c_alpha = np.nan_to_num(
-                np.asarray(c_alpha, dtype=np.float64), nan=0.0
-            )
-            c_S = np.nan_to_num(np.asarray(c_S, dtype=np.float64), nan=0.0)
+            c_alpha = np.asarray(c_alpha, dtype=np.float64)
+            c_S = np.asarray(c_S, dtype=np.float64)
             v_S = safe_float(v_S)
 
             est = (
