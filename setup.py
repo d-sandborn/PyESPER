@@ -12,11 +12,12 @@ setup(
     packages=["PyESPER"],
     install_requires=[
         "numpy",
-        "seawater",
+        # "seawater",
         "scipy",
         "matplotlib",
         "PyCO2SYS",
-        "pandas" "numba",
+        "pandas",
+        "numba",
     ],
     entry_points={
         "console_scripts": [

@@ -3,7 +3,7 @@ from scipy.interpolate import RegularGridInterpolator, NearestNDInterpolator
 import matplotlib
 
 
-def interpolate(Path, Gdf={}, AAdata={}, Elsedata={}):
+def interpolate(Path, Gdf={}, AAdata={}, Elsedata={}, verbose=False):
     """
     This LIR function performs the interpolation on user-defined data
 
@@ -19,7 +19,8 @@ def interpolate(Path, Gdf={}, AAdata={}, Elsedata={}):
         elLCs: List of points to be inteprolated outside of Atlantic/Arctic
         elInterpolants_pre: Scipy interpolant for outside of Atlantic/Arctic
     """
-    print("Performing local interpolation.")
+    if verbose:
+        print("Performing local interpolation.")
     Gvalues = list(Gdf.values())
     grid = Gvalues[0]
 
@@ -97,7 +98,7 @@ def interpolate(Path, Gdf={}, AAdata={}, Elsedata={}):
     u_depth = np.unique(grid["d2d"])
 
     # probably doesn't do anything, but may prevent interp. overshoots
-    # at geographic margins
+    # at geographic margins, like matlab's scattered interpolant algorithm
     u_lon_pad = np.concatenate(([-1e10], u_lon, [1e10]))
     u_lat_pad = np.concatenate(([-1e10], u_lat, [1e10]))
     u_depth_pad = np.concatenate(([-1e10], u_depth, [1e10]))
@@ -177,6 +178,11 @@ def interpolate(Path, Gdf={}, AAdata={}, Elsedata={}):
     interp_else = build_interpolant(else_bool)
 
     def process_grid(data_values, interpolant):
+        """
+        A function to help process data from grid and user data for interpolations
+            and interpolate based upon gridded interpolation instead of the
+            original scattered interpolation via linearndinterpolator
+        """
         if not data_values or interpolant is None:
             return [], interpolant
         first_key = list(data_values.keys())[0]

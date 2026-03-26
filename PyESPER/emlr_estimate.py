@@ -23,6 +23,10 @@ def calculate_uncertainty_kernel(
     rmse_interpolated,
     eq_val,
 ):
+    """
+    Numba JIT compiled uncertainty propagation.
+    """
+
     number_of_points = s_raw.shape[0]
     output_uncertainty = np.full(number_of_points, np.nan, dtype=np.float64)
 
@@ -103,11 +107,30 @@ def emlr_estimate(
     UDict={},
     DUDict={},
     Coefficients={},
+    verbose=False,
     **kwargs,
 ):
+    """
+    Uncertainty estimation step 1 for LIRs
+    Inputs:
+        Equations: List of equations
+        DesiredVariables: List of variables to estimate
+        Path: User-defined computer path
+        OutputCoordinates: Dictionary of locations where estimates are requested
+        PredictorMeasurements: Dictionary of measurements provided by user
+        UDict: Dictionary of user-defined measurement uncertainties
+        DUDict: Dictionary of default measurement uncertainties
+        Coefficients: Dictionary of dictionaries of coefficients for each
+            variable-equation scenario
+        **kwargs: Please see README for full description
+    Output:
+        EMLR: Dictionary of uncertainty values for each desired variable-equation
+            case scenario and estimate
+    """
     from PyESPER.fetch_data import fetch_data
 
-    print("Propagating uncertainties.")
+    if verbose:
+        print("Propagating uncertainties.")
     EMLR = {}
     depth_out = np.asarray(OutputCoordinates["depth"], dtype=np.float64)
     sal_out = np.asarray(PredictorMeasurements["salinity"], dtype=np.float64)

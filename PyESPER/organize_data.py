@@ -7,6 +7,21 @@ def organize_data(
     AAdata={},
     Elsedata={},
 ):
+    """
+    Organize interpolation output into more usable formatting and compute estimates
+    Inputs:
+        aaLCs: List of coefficients for input data from Atlantic/Arctic regions
+        elLCs: List of coefficients for input data not from Atlantic/Arctic
+        aaInterpolants_pre: Scipy interpolant for Atlantic/Arctic
+        elInterpolants_pre: Scipy interpolant for not Atlantic/Arctic
+        Gdf: Dictionary of grid for interpolation, separated into regions
+        AAdata: Dictionary of user input data for Atlantic/Arctic
+        ElseData: Dictionary of user input data not for Atlantic/Arctic
+    Outputs:
+        Estimate: Dictionary of estimates for each equation-desired variable combination
+        CoefficientsUsed: Dictionary of dictionaries of coefficients for each equation-
+            desired variable combination
+    """
     import numpy as np
     import re
 
@@ -14,7 +29,7 @@ def organize_data(
     CoefficientsUsed = {}
     Gkeys = list(Gdf.keys())
 
-    def safe_float(arr):
+    def safe_float(arr):  # nix a persistant bad string
         array_object = np.asarray(arr)
         if array_object.dtype.kind in {"U", "S", "O"}:
             array_object = np.where(
@@ -34,14 +49,14 @@ def organize_data(
 
             return np.vectorize(conv, otypes=[float])(array_object)
 
-    def process_pair(c_in, v_in):
+    def process_pair(c_in, v_in):  # make sure NaNs are treated like MATLAB
         c_out = np.asarray(c_in, dtype=np.float64)
         v_out = safe_float(v_in)
         return c_out, v_out
 
     for i, key in enumerate(Gkeys):
         eq_num = int(re.search(r"(\d+)$", key).group(1))
-        mask = 16 - eq_num
+        mask = 16 - eq_num  # this was backwards previously
 
         do_B = (mask & 1) != 0
         do_A = (mask & 2) != 0

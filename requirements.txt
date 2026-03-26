@@ -1,5 +1,5 @@
 numpy
-#seawater
+#seawater #replaced by Numba NJIT functions
 scipy
 matplotlib
 kiwisolver

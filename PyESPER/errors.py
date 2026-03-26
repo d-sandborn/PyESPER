@@ -1,4 +1,9 @@
 def errors(OutputCoordinates={}, PredictorMeasurements={}, verbose=False):
+    """
+    Custom error messages for PyESPER that check inputs and ensure that
+    formatting and other requirements are met. Mostly custom errors and
+    warnings.
+    """
     import numpy as np
     import warnings
 

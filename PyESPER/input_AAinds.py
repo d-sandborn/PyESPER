@@ -2,8 +2,24 @@ import numpy as np
 from matplotlib.path import Path
 
 
-def input_AAinds(C={}, code={}):
-    print("Classifying inputs by ocean basin.")
+def input_AAinds(C={}, code={}, verbose=False):
+    """
+    Separates user-defined inpus into Atlantic and Arctic regions or other
+        regions, defined as in ESPERv1 for MATLAB.
+
+    Inputs:
+        C: Dictionary of pre-adjusted grid coordinates
+        code: Dictionary of iterated equation-case scenario inputs for
+            user-requested variable-equation cases
+
+    Outputs:
+        AAdata: Dictionary of code data separated for areas encompassed by the
+            Atlantic and Arctic Oceans only
+        Elsedata: Dictionary of code data separated for areas not encompassed by
+            the Atlantic and Arctic Oceans
+    """
+    if verbose:
+        print("Classifying inputs by ocean basin.")
 
     LNAPoly = np.array(
         [

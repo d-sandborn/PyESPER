@@ -1,6 +1,6 @@
 def adjust_pH_DIC(
     DesiredVariables,
-    VerboseTF,
+    verbose,
     Dates,
     Path,
     Est_pre={},
@@ -17,7 +17,7 @@ def adjust_pH_DIC(
 
     Inputs:
         DesiredVariables: List of desired variables to estimate
-        VerboseTF: Boolean indicating whether the user wants suppression of warnings
+        verbose: Boolean indicating whether the user wants suppression of warnings
         Dates: List of dates for estimates
         Est_pre: Dictionary of preliminary estimates for each variable-equation case scenario
         PredictorMeasurements: Dictionary of input measurements for each variable-equation case scenario
@@ -37,7 +37,7 @@ def adjust_pH_DIC(
         n = len(Dates) if hasattr(Dates, "__len__") else 1
         return Est_pre, np.zeros(n), np.zeros(n)
 
-    if VerboseTF:
+    if verbose:
         print("Estimating anthropogenic carbon for PyESPER_LIR.")
 
     longitude = np.mod(np.asarray(OutputCoordinates["longitude"]), 360.0)
