@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator, NearestNDInterpolator
 import matplotlib
+import warnings
 
 
 def interpolate(Path, Gdf={}, AAdata={}, Elsedata={}, verbose=False):
@@ -140,7 +141,9 @@ def interpolate(Path, Gdf={}, AAdata={}, Elsedata={}, verbose=False):
         masked_points = points_3d[mask]
         masked_values = raw_values_all[mask]
 
-        mean_vals = np.nanmean(masked_values, axis=0)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            mean_vals = np.nanmean(masked_values, axis=0)
 
         # nearest interp is only for initializing the grid
         # and preventing first interpolation from contaminating second

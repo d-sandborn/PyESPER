@@ -3,7 +3,6 @@ def lir(
     Path,
     OutputCoordinates={},
     PredictorMeasurements={},
-    verbose=False,
     **kwargs,
 ):
     """
@@ -166,8 +165,6 @@ def lir(
     # Stopping the timer
     toc = time.perf_counter()
     if verbose:
-        print(
-            f"PyESPER_LIR took {toc - tic:0.4f} seconds, or {(toc-tic)/60:0.4f} minutes to run"
-        )
+        print(f"PyESPER_LIR took {toc - tic:0.4f} seconds to run")
 
     return Estimates, CoefficientsUsed, Uncertainties

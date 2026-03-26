@@ -1,4 +1,4 @@
-def errors(OutputCoordinates={}, PredictorMeasurements={}, verbose=False):
+def errors(OutputCoordinates={}, PredictorMeasurements={}):
     """
     Custom error messages for PyESPER that check inputs and ensure that
     formatting and other requirements are met. Mostly custom errors and
@@ -31,43 +31,36 @@ def errors(OutputCoordinates={}, PredictorMeasurements={}, verbose=False):
     if "temperature" in PredictorMeasurements:
         temp_arr = np.asarray(PredictorMeasurements["temperature"])
         if np.any((temp_arr < -5) | (temp_arr > 50)):
-            if verbose:
-                warnings.warn(
-                    "Temperatures below -5°C or above 50°C found. PyESPER is not designed for seawater with these properties. Ensure temperatures are in Celsius."
-                )
+            warnings.warn(
+                "Temperatures below -5°C or above 50°C found. PyESPER is not designed for seawater with these properties. Ensure temperatures are in Celsius."
+            )
 
     sal_arr = np.asarray(PredictorMeasurements["salinity"])
     if np.any((sal_arr < 5) | (sal_arr > 50)):
-        if verbose:
-            warnings.warn(
-                "Salinities less than 5 or greater than 50 have been found. ESPER is not intended for seawater with these properties."
-            )
+        warnings.warn(
+            "Salinities less than 5 or greater than 50 have been found. ESPER is not intended for seawater with these properties."
+        )
 
     depth_arr = np.asarray(OutputCoordinates["depth"])
     if np.any(depth_arr < 0):
-        if verbose:
-            warnings.warn("Depth cannot be negative.")
+        warnings.warn("Depth cannot be negative.")
 
     if np.any(np.isnan(depth_arr)):
-        if verbose:
-            warnings.warn("Depth cannot be nan.")
+        warnings.warn("Depth cannot be nan.")
 
     lat_arr = np.asarray(OutputCoordinates["latitude"])
     if np.any(np.abs(lat_arr) > 90):
-        if verbose:
-            warnings.warn(
-                "A latitude >90 deg (N or S) has been detected. Verify latitude is entered correctly as an input."
-            )
+        warnings.warn(
+            "A latitude >90 deg (N or S) has been detected. Verify latitude is entered correctly as an input."
+        )
 
     missing_flags = np.array([-9999, -99, -1e20])
     if np.any(np.isin(lat_arr, missing_flags)):
-        if verbose:
-            warnings.warn(
-                "A common non-NaN missing data indicator (e.g., -999, -9, -1e20) was detected in the input measurements provided. Missing data should be replaced with NaNs. Otherwise, ESPER will interpret your inputs at face value and give terrible estimates."
-            )
-
-    if verbose:
         warnings.warn(
-            "Please note that, for consistency with MATLAB ESPERv1, the now-deprecated sw package is used. This will be replaced with gsw in future updates.",
-            PendingDeprecationWarning,
+            "A common non-NaN missing data indicator (e.g., -999, -9, -1e20) was detected in the input measurements provided. Missing data should be replaced with NaNs. Otherwise, ESPER will interpret your inputs at face value and give terrible estimates."
         )
+
+    warnings.warn(
+        "Please note that, for consistency with MATLAB ESPERv1, the now-deprecated sw package is used. This will be replaced with gsw in future updates.",
+        PendingDeprecationWarning,
+    )
