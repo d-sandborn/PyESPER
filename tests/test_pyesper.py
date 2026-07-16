@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+import pathlib
 from PyESPER.lir import lir
 from PyESPER.nn import nn
 from PyESPER.mixed import mixed
@@ -19,7 +20,7 @@ PredictorMeasurements = {
     "oxygen": [198, 215, 200],
 }
 EstDates = [1980, 2002, 2030]
-Path = ""
+Path = str(pathlib.Path(__file__).resolve().parent.parent)
 
 
 def test_dummy():
