@@ -1,5 +1,12 @@
-def pH_DIC_nn_adjustment(Path, DesiredVariables, Estimates, YouHaveBeenWarnedCanth, OutputCoordinates={}, PredictorMeasurements={}, **kwargs):
-
+def pH_DIC_nn_adjustment(
+    Path,
+    DesiredVariables,
+    Estimates,
+    YouHaveBeenWarnedCanth,
+    OutputCoordinates={},
+    PredictorMeasurements={},
+    **kwargs
+):
     """
     Calculating the anthropogenic carbon component for DIC and pH, if needed
 
@@ -27,7 +34,9 @@ def pH_DIC_nn_adjustment(Path, DesiredVariables, Estimates, YouHaveBeenWarnedCan
     from PyESPER.define_polygons import define_polygons
     from PyESPER.run_nets import run_nets
     from PyESPER.process_netresults import process_netresults
-    import seawater as sw
+
+    # import seawater as sw
+    import PyESPER.eos80_jit as sw  # grab local copies of NJIT'd seawater
     import PyCO2SYS as pyco2
 
     # Interpreting kwargs and setting defaults if needed
@@ -36,8 +45,13 @@ def pH_DIC_nn_adjustment(Path, DesiredVariables, Estimates, YouHaveBeenWarnedCan
     if "EstDates" in kwargs:
         d = np.array(kwargs["EstDates"])
         EstDates = (
-            [item for sublist in [kwargs["EstDates"]] * (n + 1) for item in sublist]
-            if len(d) != n else list(d)
+            [
+                item
+                for sublist in [kwargs["EstDates"]] * (n + 1)
+                for item in sublist
+            ]
+            if len(d) != n
+            else list(d)
         )
     else:
         EstDates = [2002.0] * n
@@ -48,16 +62,20 @@ def pH_DIC_nn_adjustment(Path, DesiredVariables, Estimates, YouHaveBeenWarnedCan
     values2 = list(Estimates.values())
 
     # Only if dates are available and if needed, continue
-    if "EstDates" in kwargs and ("DIC" in DesiredVariables or "pH" in DesiredVariables):
-        if not YouHaveBeenWarnedCanth:   
+    if "EstDates" in kwargs and (
+        "DIC" in DesiredVariables or "pH" in DesiredVariables
+    ):
+        if not YouHaveBeenWarnedCanth:
             if VerboseTF:
                 print("Estimating anthropogenic carbon for PyESPER_NN.")
             longitude = np.mod(OutputCoordinates["longitude"], 360)
             latitude = np.array(OutputCoordinates["latitude"])
             depth = np.array(OutputCoordinates["depth"])
-            Cant, Cant2002 = simplecantestimatelr(EstDates, longitude, latitude, depth, Path)
+            Cant, Cant2002 = simplecantestimatelr(
+                EstDates, longitude, latitude, depth, Path
+            )
             YouHaveBeenWarnedCanth = True
-    
+
         for combo, a in zip(combos2, values2):
             a = np.array(a, dtype=float)
             if combo.startswith("DIC"):
@@ -65,37 +83,24 @@ def pH_DIC_nn_adjustment(Path, DesiredVariables, Estimates, YouHaveBeenWarnedCan
                 Cant_adjusted[combo] = a.tolist()
             else:
                 Cant_adjusted[combo] = a.tolist()
-        
+
         # Extra perturbation for pH
-        if "pH" in DesiredVariables:   
+        if "pH" in DesiredVariables:
             warning = []
-            for combo, values in zip (combos2, values2):
+            for combo, values in zip(combos2, values2):
                 if combo.startswith("pH"):
                     salinity = PredictorMeasurements["salinity"]
                     PM_pH = {"salinity": salinity}
                     eq = [16]
                     _, n, _, EstDates, C, PerKgSwTF, MeasUncerts = defaults(
-                        ["TA"],
-                        PM_pH,
-                        OutputCoordinates,
-                        **kwargs
+                        ["TA"], PM_pH, OutputCoordinates, **kwargs
                     )
                     U_pre, DU_pre = measurement_uncertainty_defaults(
-                        n,
-                        PM_pH,
-                        MeasUncerts
+                        n, PM_pH, MeasUncerts
                     )
-                    InputAll = inputdata_organize(
-                        EstDates,
-                        C,
-                        PM_pH,
-                        U_pre
-                    )
+                    InputAll = inputdata_organize(EstDates, C, PM_pH, U_pre)
                     PM_pH, InputAll = temperature_define(
-                        ["TA"],
-                        PM_pH,
-                        InputAll,
-                        **kwargs
+                        ["TA"], PM_pH, InputAll, **kwargs
                     )
                     code, unc_combo_dict, dunc_combo_dict = iterations(
                         ["TA"],
@@ -105,26 +110,19 @@ def pH_DIC_nn_adjustment(Path, DesiredVariables, Estimates, YouHaveBeenWarnedCan
                         PM_pH,
                         InputAll,
                         U_pre,
-                        DU_pre 
+                        DU_pre,
                     )
                     df = define_polygons(C)
-                    EstAtl, EstOther = run_nets(
-                        ["TA"],
-                        eq,
-                        code
-                    )
-                    alkest = process_netresults(
-                        eq,
-                        code,
-                        df,
-                        EstAtl,
-                        EstOther
-                     )
+                    EstAtl, EstOther = run_nets(["TA"], eq, code)
+                    alkest = process_netresults(eq, code, df, EstAtl, EstOther)
                     EstAlk = np.array(alkest["TA16"])
                     EstSi = EstP = [0] * len(EstAlk)
-                    Pressure = sw.pres(OutputCoordinates["depth"], OutputCoordinates["latitude"])
+                    Pressure = sw.pres(
+                        OutputCoordinates["depth"],
+                        OutputCoordinates["latitude"],
+                    )
                     Est = np.array(values)
-                        
+
                     # CO2SYS calculations
                     Out = pyco2.sys(
                         par1=EstAlk,
@@ -138,7 +136,7 @@ def pH_DIC_nn_adjustment(Path, DesiredVariables, Estimates, YouHaveBeenWarnedCan
                         pressure_out=Pressure,
                         total_silicate=EstSi,
                         total_phosphate=EstP,
-                        opt_total_borate= 2
+                        opt_total_borate=2,
                     )
                     DICadj = Out["dic"] + Cant - Cant2002
                     OutAdj = pyco2.sys(
@@ -153,10 +151,10 @@ def pH_DIC_nn_adjustment(Path, DesiredVariables, Estimates, YouHaveBeenWarnedCan
                         pressure_out=Pressure,
                         total_silicate=EstSi,
                         total_phosphate=EstP,
-                        opt_total_borate=2
-                    )   
-                    pHadj = OutAdj["pH"] 
-                    
+                        opt_total_borate=2,
+                    )
+                    pHadj = OutAdj["pH"]
+
                     if any(np.isnan(pHadj)):
                         warning_message = (
                             "Warning: CO2SS took >20 iterations to converge. The correcponding estimate(s) will be NaN. "
@@ -166,24 +164,32 @@ def pH_DIC_nn_adjustment(Path, DesiredVariables, Estimates, YouHaveBeenWarnedCan
                         warning.append(warning_message)
                     else:
                         pHadj = np.array(values)
-                        
+
                     Cant_adjusted[combo] = pHadj.tolist()
-                        
+
                 # Print warnings if any
                 if warning:
-                    print(warning[0])  
-                        
-    elif "EstDates" not in kwargs and ("DIC" or "pH" in DesiredVariables) and VerboseTF and not YouHaveBeenWarnedCanth:
-        print("Warning: DIC or pH is a requested output but the user did not provide dates for the desired estimates. The estimates will be specific to 2002.0 unless the optional EstDates input is provided (recommended).")
+                    print(warning[0])
+
+    elif (
+        "EstDates" not in kwargs
+        and ("DIC" or "pH" in DesiredVariables)
+        and VerboseTF
+        and not YouHaveBeenWarnedCanth
+    ):
+        print(
+            "Warning: DIC or pH is a requested output but the user did not provide dates for the desired estimates. The estimates will be specific to 2002.0 unless the optional EstDates input is provided (recommended)."
+        )
         YouHaveBeenWarnedCanth = True
-                        
+
     if kwargs.get("pHCalcTF") and "pH" in DesiredVariables:
         if VerboseTF:
-            print("Recalculating the pH to be appropriate for pH values calculated from TA and DIC.")
+            print(
+                "Recalculating the pH to be appropriate for pH values calculated from TA and DIC."
+            )
         for combo, pH_values in zip(combos2, values2):
             if combo.startswith("pH"):
                 pH_adjcalc_Est = [(pH + 0.3168) / 1.0404 for pH in pH_values]
                 Cant_adjusted[combo] = pH_adjcalc_Est
-                        
-    return Cant_adjusted
 
+    return Cant_adjusted
