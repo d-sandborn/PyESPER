@@ -1,5 +1,7 @@
 # PyESPER
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21249086.svg)](https://doi.org/10.5281/zenodo.21249086)
+
 PyESPER is a Python implementation of MATLAB Empirical Seawater Property Estimation Routines ([ESPERs](https://github.com/BRCScienceProducts/ESPER)), and the present version consists of a preliminary package which implements these routines. These routines provide estimates of seawater biogeochemical properties at user-provided sets of coordinates, depth, and available biogeochemical properties. 
 
 This package is developed in parallel with [TRACE-Python](https://github.com/d-sandborn/TRACE).
