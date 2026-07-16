@@ -12,7 +12,7 @@ def simplecantestimatelr(EstDates, longitude, latitude, depth, data_path=None):
     if data_path is None:
         data_path = Path(__file__) / "SimpleCantEstimateLR_full.csv"
     else:
-        data_path = Path(data_path)
+        data_path = Path(data_path) / "SimpleCantEstimateLR_full.csv"
 
     cache_key = str(data_path)
 
