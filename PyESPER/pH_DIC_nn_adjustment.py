@@ -118,8 +118,8 @@ def pH_DIC_nn_adjustment(
                     EstAlk = np.array(alkest["TA16"])
                     EstSi = EstP = [0] * len(EstAlk)
                     Pressure = sw.pres(
-                        OutputCoordinates["depth"],
-                        OutputCoordinates["latitude"],
+                        np.asarray(OutputCoordinates["depth"]),
+                        np.asarray(OutputCoordinates["latitude"]),
                     )
                     Est = np.array(values)
 

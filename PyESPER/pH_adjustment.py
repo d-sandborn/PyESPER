@@ -111,8 +111,8 @@ def pH_adjustment(
                     EstSi = EstP = [0] * len(EstAlk)
                     # Calculating pressure using the sw package
                     Pressure = sw.pres(
-                        OutputCoordinates["depth"],
-                        OutputCoordinates["latitude"],
+                        np.asarray(OutputCoordinates["depth"]),
+                        np.asarray(OutputCoordinates["latitude"]),
                     )
                     Est = np.array(values)
                     Est = np.transpose(Est)
